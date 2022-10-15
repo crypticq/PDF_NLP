@@ -4,44 +4,41 @@ from spacy.lang.en.stop_words import STOP_WORDS
 from string import punctuation
 from heapq import nlargest
 from docx import Document
+from docx.shared import Inches
+import pdfplumber
 
 
-class FrequencySummarizer:
+def get_pdf_text(pdf_file):
+    text = []
+    with pdfplumber.open(pdf_file) as pdf:
+        for i in range(len(pdf.pages)):
+            page = pdf.pages[i]
+            text.append(page.extract_text())
 
-    def __init__(self , pdf_file , output_file):
-        self.pdf_file = pdf_file
-        self.nlp = spacy.load('en_core_web_sm')
-        self.stopwords = list(STOP_WORDS)
-        self.punctuation = punctuation
-        self.text = self.get_pdf_text()
-        self.output_file = output_file + ".docx"
-
+    return text
 
 
-    def get_pdf_text(self):
-        pdf_file_obj = open(self.pdf_file, 'rb')
-        text = ""
-        pdf_reader = PyPDF2.PdfFileReader(pdf_file_obj , strict=False)
-        for page in range(pdf_reader.numPages):
-            page_obj = pdf_reader.getPage(page)
-            text += page_obj.extractText()
-
-        return text
-
-
-    def get_summary(self, sentences_count=5):
-        doc = self.nlp(self.text)
+def summarize(text, n=5):
+    try:
+        nlp = spacy.load('en_core_web_sm')
+        doc = nlp(text)
+        stopwords = list(STOP_WORDS)
         word_frequencies = {}
         for word in doc:
-            if word.text not in self.stopwords and word.text not in self.punctuation:
-                if word.text not in word_frequencies.keys():
-                    word_frequencies[word.text] = 1
-                else:
-                    word_frequencies[word.text] += 1
+            if word.text not in stopwords:
+                if word.text not in punctuation:
+                    if word.text not in word_frequencies.keys():
+                        word_frequencies[word.text] = 1
+                    else:
+                        word_frequencies[word.text] += 1
+
         max_frequency = max(word_frequencies.values())
+
         for word in word_frequencies.keys():
-            word_frequencies[word] = word_frequencies[word]/max_frequency
-        sentence_list = [ sentence for sentence in doc.sents ]
+            word_frequencies[word] = (word_frequencies[word]/max_frequency)
+
+        sentence_list = [sentence for sentence in doc.sents]
+
         sentence_scores = {}
         for sent in sentence_list:
             for word in sent:
@@ -51,28 +48,32 @@ class FrequencySummarizer:
                             sentence_scores[sent] = word_frequencies[word.text.lower()]
                         else:
                             sentence_scores[sent] += word_frequencies[word.text.lower()]
-        summary_sentences = nlargest(sentences_count, sentence_scores, key=sentence_scores.get)
-        final_sentences = [ w.text for w in summary_sentences ]
-        summary = ' '.join(final_sentences)
+
+        select_length = int(len(sentence_list) * n)
+        summary = nlargest(select_length, sentence_scores, key=sentence_scores.get)
+        final_summary = [word.text for word in summary]
+        summary = ' '.join(final_summary)
         return summary
-
-    def write_summary(self, summary):
-        document = Document()
-        document.add_heading('Summary', 0)
-        document.add_paragraph(summary)
-
-        document.save(self.output_file)
-        print("Summary saved as {}".format(self.output_file))
-
-
-
+    except Exception as e:
+        print(e)
+        pass
 
 if __name__ == '__main__':
+    res = []
+    pdf_file = input('Enter the pdf file name: ')
+    pdf_text = get_pdf_text(pdf_file)
+    output_file = input('Enter the output file name without .docx: ')
 
-    file_input = input("Enter the name of the pdf file: ")
-    file_output = input("Enter the name of the output file without .docx : ")
-    fs = FrequencySummarizer(file_input , file_output)
-    summary = fs.get_summary()
-    fs.write_summary(summary)
+    for text in pdf_text:
+        data = (summarize(text))
+        res.append(data)
+
+    document = Document()
+    document.add_heading('Summary', 0)
+    for i in res:
+        document.add_paragraph(i)
+    document.save('{}.docx'.format(output_file))
+    print('Summary is saved in {}.docx'.format((output_file)))
+
 
 
