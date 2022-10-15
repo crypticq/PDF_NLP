@@ -1,8 +1,4 @@
 import pdfplumber
-import spacy
-from spacy.lang.en.stop_words import STOP_WORDS
-from string import punctuation
-from heapq import nlargest
 from docx import Document
 
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
@@ -44,6 +40,6 @@ if __name__ == '__main__':
         document.add_paragraph(i)
     document.save('{}.docx'.format(output_file))
 
-    print('Summary is saved in summary.docx')
+    print('Summary is saved in {}.docx'.format(output_file))
 
 
