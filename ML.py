@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
         line_elements = line.split()
         for word in line_elements:
-            if len(text) + len(word) > 100:
+            if len(text) + len(word) > 250:
                 document.add_paragraph(text)
                 text = ""
             text += word + " "
