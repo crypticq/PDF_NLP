@@ -5,7 +5,9 @@ from string import punctuation
 from heapq import nlargest
 from docx import Document
 from docx.shared import Inches
+from docx.shared import Pt
 import pdfplumber
+from docx.shared import RGBColor
 
 
 def get_pdf_text(pdf_file):
@@ -70,10 +72,33 @@ if __name__ == '__main__':
 
     document = Document()
     document.add_heading('Summary', 0)
-    for i in res:
-        document.add_paragraph(i)
+
+    style = document.styles['Normal']
+    font = style.font
+    font.color.rgb = RGBColor.from_string('880808')
+    font.name = 'Times New Roman'
+    font.size = Pt(14)
+    text = ""
+
+    counter = 0
+
+    for line in res:
+
+        line_elements = line.split()
+        for word in line_elements:
+            if len(text) + len(word) > 100:
+                document.add_paragraph(text)
+                text = ""
+            text += word + " "
+        document.add_paragraph(text)
+        text = ""
+        counter += 1
+        if counter < len(res):
+            document.add_page_break()
+
     document.save('{}.docx'.format(output_file))
-    print('Summary is saved in {}.docx'.format((output_file)))
+    print('Summary is saved in {}.docx'.format(output_file))
+
 
 
 
