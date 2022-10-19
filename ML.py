@@ -37,30 +37,13 @@ if __name__ == '__main__':
     print('Summary is ready')
 
     document = Document()
-    document.add_heading('Summary', 0)
-
     style = document.styles['Normal']
     font = style.font
-    font.color.rgb = RGBColor.from_string('880808')
-    font.name = 'Times New Roman'
     font.size = Pt(14)
-    text = ""
-
-    counter = 0
-
-    for line in final_summary:
-
-        line_elements = line.split()
-        for word in line_elements:
-            if len(text) + len(word) > 250:
-                document.add_paragraph(text)
-                text = ""
-            text += word + " "
-        document.add_paragraph(text)
-        text = ""
-        counter += 1
-        if counter < len(final_summary):
-            document.add_page_break()
+    font.color.rgb = RGBColor.from_string('FF0000')
+    document.add_heading('Summry', level=1)
+    for w in final_summary:
+        document.add_paragraph(w)
 
     document.save('{}.docx'.format(output_file))
     print('Summary is saved in {}.docx'.format(output_file))
